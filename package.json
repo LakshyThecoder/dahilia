@@ -18,7 +18,8 @@
     "html5-qrcode": "^2.3.8",
     "lucide-react": "^0.294.0",
     "clsx": "^2.0.0",
-    "tailwind-merge": "^2.0.0"
+    "tailwind-merge": "^2.0.0",
+    "framer-motion": "^11.0.0"
   },
   "devDependencies": {
     "@types/node": "^20",

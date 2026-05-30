@@ -37,7 +37,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   }, [supabase])
 
   return (
-    <Context.Provider value={{ supabase }}>
+    <Context.Provider value={{ supabase: supabase as any }}>
       {children}
     </Context.Provider>
   )

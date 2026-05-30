@@ -94,6 +94,7 @@ export default function AdminDashboard() {
         .select('*, customers(name, email)')
         .order('created_at', { ascending: false })
         .limit(50)
+        .returns<Transaction[]>()
       
       setTransactions(transactionsData || [])
       
@@ -102,6 +103,7 @@ export default function AdminDashboard() {
         .from('rewards')
         .select('*')
         .order('points_required', { ascending: true })
+        .returns<Reward[]>()
       
       setRewards(rewardsData || [])
       

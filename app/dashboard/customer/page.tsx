@@ -123,7 +123,7 @@ export default function CustomerDashboard() {
 
       if (customerError || !customerData) {
         // Create new customer if doesn't exist
-        const { data: newCustomer, error: createError } = await supabase
+        const { data: newCustomer, error: createError } = await (supabase as any)
           .from('customers')
           .insert({
             user_id: userId,
@@ -133,7 +133,7 @@ export default function CustomerDashboard() {
             total_points: 0,
             total_spent: 0,
             visit_count: 0
-          })
+          } as any)
           .select()
           .single()
 
@@ -153,10 +153,10 @@ export default function CustomerDashboard() {
       setRewards(rewardsData || [])
 
       // Fetch recent transactions
-      const { data: transactionsData } = await supabase
+      const { data: transactionsData } = await (supabase as any)
         .from('transactions')
         .select('*')
-        .eq('customer_id', customerData?.id || '')
+        .eq('customer_id', (customerData as any)?.id || '')
         .order('created_at', { ascending: false })
         .limit(5)
 

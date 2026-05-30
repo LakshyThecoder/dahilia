@@ -2,12 +2,33 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Html5Qrcode } from 'html5-qrcode'
-import { Camera, CheckCircle, X, AlertCircle, RotateCcw, Volume2 } from 'lucide-react'
+import { Camera, CheckCircle, X, AlertCircle, RotateCcw, Gift, Sparkles } from 'lucide-react'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
+
+interface Customer {
+  id: string
+  name: string | null
+  email: string
+  total_points: number
+  total_spent: number
+  visit_count: number
+}
+
+interface Reward {
+  id: string
+  reward_name: string
+  points_required: number
+  description: string | null
+  active: boolean
+}
 
 export default function Scanner() {
+  const { supabase } = useSupabase()
   const scannerRef = useRef<Html5Qrcode | null>(null)
   const [scanning, setScanning] = useState(false)
   const [scannedData, setScannedData] = useState<string | null>(null)
+  const [customer, setCustomer] = useState<Customer | null>(null)
+  const [rewards, setRewards] = useState<Reward[]>([])
   const [amount, setAmount] = useState('')
   const [step, setStep] = useState<'scan' | 'amount' | 'confirm' | 'success'>('scan')
   const [error, setError] = useState<string | null>(null)
@@ -47,12 +68,44 @@ export default function Scanner() {
         await scannerRef.current.start(
           { facingMode: 'environment' },
           { fps: 10, qrbox: { width: 280, height: 280 } },
-          (decodedText) => {
+          async (decodedText) => {
             playSuccessSound()
             setScannedData(decodedText)
             setScanning(false)
             scannerRef.current?.stop()
-            setStep('amount')
+            
+            // Fetch customer data
+            setLoading(true)
+            try {
+              const { data: customerData, error: customerError } = await (supabase as any)
+                .from('customers')
+                .select('*')
+                .eq('qr_token', decodedText)
+                .single()
+
+              if (customerError || !customerData) {
+                setError('Customer not found')
+                setStep('scan')
+                setLoading(false)
+                return
+              }
+
+              setCustomer(customerData)
+
+              // Fetch rewards
+              const { data: rewardsData } = await (supabase as any)
+                .from('rewards')
+                .select('*')
+                .eq('active', true)
+                .order('points_required', { ascending: true })
+
+              setRewards(rewardsData || [])
+              setStep('amount')
+            } catch (err) {
+              setError('Failed to fetch customer data')
+              setStep('scan')
+            }
+            setLoading(false)
           },
           () => {}
         )
@@ -86,15 +139,44 @@ export default function Scanner() {
     }
   }
 
-  const handleConfirm = () => {
-    setStep('success')
-    // Reset after showing success
-    setTimeout(() => {
-      setScannedData(null)
-      setAmount('')
-      setStep('scan')
-      scannerRef.current = null
-    }, 2500)
+  const handleConfirm = async () => {
+    setLoading(true)
+    try {
+      if (customer) {
+        const pointsEarned = Math.floor(parseFloat(amount))
+        
+        // Record transaction
+        await (supabase as any).from('transactions').insert({
+          customer_id: customer.id,
+          restaurant_id: '00000000-0000-0000-0000-000000000000',
+          amount: parseFloat(amount),
+          points_earned: pointsEarned
+        })
+
+        // Update customer points
+        await (supabase as any).from('customers')
+          .update({
+            total_points: customer.total_points + pointsEarned,
+            total_spent: customer.total_spent + parseFloat(amount),
+            visit_count: customer.visit_count + 1,
+            last_visit_at: new Date().toISOString()
+          })
+          .eq('id', customer.id)
+      }
+      
+      setStep('success')
+      // Reset after showing success
+      setTimeout(() => {
+        setScannedData(null)
+        setCustomer(null)
+        setAmount('')
+        setStep('scan')
+        scannerRef.current = null
+      }, 3000)
+    } catch (e) {
+      console.error('Error confirming transaction', e)
+    }
+    setLoading(false)
   }
 
   const handleNumpadPress = (key: string) => {
@@ -217,13 +299,48 @@ export default function Scanner() {
 
         <div className="flex-1 flex flex-col max-w-md mx-auto w-full p-4">
           {/* Success header */}
-          <div className="flex items-center gap-3 mb-6 text-green-600 bg-green-50 rounded-xl p-4">
-            <CheckCircle className="w-6 h-6" />
+          <div className="flex items-center gap-3 mb-6 text-green-600 bg-green-50 rounded-xl p-4 shadow-sm border border-green-100">
+            <CheckCircle className="w-8 h-8" />
             <div>
-              <p className="font-semibold">Customer Found!</p>
-              <p className="text-sm text-green-600/70">ID: {scannedData?.slice(-8)}</p>
+              <p className="font-bold text-lg">{customer?.name || customer?.email}</p>
+              <p className="text-sm font-medium text-green-700">Points Balance: {customer?.total_points} pts</p>
             </div>
           </div>
+
+          {/* Available Rewards */}
+          {rewards.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-lg p-5 mb-4 border border-italian-gold/20">
+              <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                <Gift className="w-5 h-5 text-italian-red" />
+                Available Rewards
+              </h3>
+              <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                {rewards.map(reward => {
+                  const canAfford = (customer?.total_points || 0) >= reward.points_required
+                  return (
+                    <div 
+                      key={reward.id} 
+                      className={`flex items-center justify-between p-3 rounded-xl border ${
+                        canAfford ? 'bg-green-50/50 border-green-200' : 'bg-gray-50 border-gray-100 opacity-60'
+                      }`}
+                    >
+                      <div>
+                        <p className={`font-semibold text-sm ${canAfford ? 'text-green-800' : 'text-gray-600'}`}>
+                          {reward.reward_name}
+                        </p>
+                        <p className="text-xs text-gray-500">{reward.description}</p>
+                      </div>
+                      <span className={`text-xs font-bold px-2 py-1 rounded-md ${
+                        canAfford ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'
+                      }`}>
+                        {reward.points_required} pts
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Amount display */}
           <div className="bg-white rounded-2xl shadow-lg p-6 mb-4">

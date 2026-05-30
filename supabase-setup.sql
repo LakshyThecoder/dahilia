@@ -33,6 +33,10 @@ CREATE TABLE IF NOT EXISTS customers (
   total_spent DECIMAL(10,2) DEFAULT 0,
   visit_count INTEGER DEFAULT 0,
   last_visit_at TIMESTAMP WITH TIME ZONE,
+  phone TEXT,
+  birthdate DATE,
+  preferences TEXT[],
+  profile_completed BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

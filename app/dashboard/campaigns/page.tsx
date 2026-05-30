@@ -76,7 +76,7 @@ export default function CampaignsPage() {
       addToast('info', `Starting campaign send to ${totalCustomers} customers...`, 3000)
 
       // Save campaign to database
-      const { data: campaign, error: campaignError } = await supabase
+      const { data: campaign, error: campaignError } = await (supabase as any)
         .from('campaigns')
         .insert({
           restaurant_id: '00000000-0000-0000-0000-000000000000',
@@ -87,7 +87,7 @@ export default function CampaignsPage() {
           status: 'sending',
           sent_at: new Date().toISOString(),
           sent_to: 0
-        })
+        } as any)
         .select()
         .single()
 
@@ -134,10 +134,10 @@ export default function CampaignsPage() {
       }
 
       // Update campaign with final count
-      await supabase
+      await (supabase as any)
         .from('campaigns')
-        .update({ status: 'sent', sent_to: sentCount })
-        .eq('id', campaign.id)
+        .update({ status: 'sent', sent_to: sentCount } as any)
+        .eq('id', (campaign as any).id)
 
       const duration = ((Date.now() - startTime) / 1000).toFixed(1)
 

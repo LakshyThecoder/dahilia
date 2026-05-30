@@ -42,6 +42,10 @@ export type Database = {
           total_spent: number
           visit_count: number
           last_visit_at: string | null
+          phone: string | null
+          birthdate: string | null
+          preferences: string[] | null
+          profile_completed: boolean
           created_at: string
         }
         Insert: {
@@ -55,6 +59,10 @@ export type Database = {
           total_spent?: number
           visit_count?: number
           last_visit_at?: string | null
+          phone?: string | null
+          birthdate?: string | null
+          preferences?: string[] | null
+          profile_completed?: boolean
           created_at?: string
         }
         Update: {
@@ -68,6 +76,10 @@ export type Database = {
           total_spent?: number
           visit_count?: number
           last_visit_at?: string | null
+          phone?: string | null
+          birthdate?: string | null
+          preferences?: string[] | null
+          profile_completed?: boolean
           created_at?: string
         }
       }
@@ -173,6 +185,44 @@ export type Database = {
           role?: 'owner' | 'manager' | 'staff'
           pin_code?: string | null
           active?: boolean
+          created_at?: string
+        }
+      }
+      campaigns: {
+        Row: {
+          id: string
+          restaurant_id: string
+          title: string
+          message: string
+          target_segment: string
+          delivery_channel: string
+          status: string
+          sent_at: string | null
+          sent_to: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          restaurant_id: string
+          title: string
+          message: string
+          target_segment?: string
+          delivery_channel?: string
+          status?: string
+          sent_at?: string | null
+          sent_to?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          restaurant_id?: string
+          title?: string
+          message?: string
+          target_segment?: string
+          delivery_channel?: string
+          status?: string
+          sent_at?: string | null
+          sent_to?: number
           created_at?: string
         }
       }

@@ -47,7 +47,7 @@ export default function ProfileSetup() {
       }
 
       // Update customer profile
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('customers')
         .update({
           name: formData.name,
@@ -55,7 +55,7 @@ export default function ProfileSetup() {
           birthdate: formData.birthdate,
           preferences: formData.preferences,
           profile_completed: true
-        })
+        } as any)
         .eq('user_id', user.id)
 
       if (error) throw error

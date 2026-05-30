@@ -84,6 +84,7 @@ export default function AdminDashboard() {
         .from('customers')
         .select('*')
         .order('created_at', { ascending: false })
+        .returns<Customer[]>()
       
       setCustomers(customersData || [])
       
